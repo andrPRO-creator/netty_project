@@ -1,30 +1,53 @@
 package org.example.commands;
 
+import org.example.exceptions.InvalidCreateCommandException;
 import org.example.exceptions.TopicNotFoundException;
 import org.example.handlers.ServerHandler;
 import org.example.models.Topic;
 import org.example.models.Vote;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class ClientCommands {
+    private static final String TOPIC_COMMAND = "topic -n";
+    private static final String VOTE_COMMAND = "vote -t";
+    private static final String CREATE_COMMAND = "create";
+    private static final String INVALID_CREATE_COMMAND = "Invalid create command";
+
     public static String login(String username) {
         ServerHandler.loggedInUsers.put(username, username);
         return "Logged in as " + username;
     }
 
-    public static String createTopic(String[] parts) {
-        if (parts[0].equals("create topic -n") && parts.length>1) {
-            String topicName = String.join("=", Arrays.copyOfRange(parts, 1, parts.length));
-            ServerHandler.topics.put(topicName, new Topic(topicName));
-            return "Topic created: " + topicName;
+    private static String parseStringCommand(String[] parts, String command) {
+        if (parts[0].equals(command) && parts.length>1) {
+            return String.join("=", Arrays.copyOfRange(parts, 1, parts.length));
+        } else {
+            throw new InvalidCreateCommandException(INVALID_CREATE_COMMAND);
         }
-        return "Invalid create topic command";
+    }
+
+    private static String queryForInput(String message, Scanner scanner) {
+        System.out.println(message);
+        return scanner.nextLine();
+    }
+
+    private static String queryForInput(String message, Object args, Scanner scanner) {
+        System.out.println(String.format(message, args));
+        return scanner.nextLine();
+    }
+
+    public static String createTopic(String[] parts) {
+        String topicName = parseStringCommand(parts, CREATE_COMMAND + " " + TOPIC_COMMAND);
+        ServerHandler.topics.put(topicName, new Topic(topicName));
+        return "Topic is created";
     }
 
     public static String createVote(String[] parts){
-        if (parts[0].equals("create vote -t") && parts.length>1) {
-            String topicName = String.join("=", Arrays.copyOfRange(parts, 1, parts.length));
+            String topicName = parseStringCommand(parts, CREATE_COMMAND + " " + VOTE_COMMAND);
+
             if (!ServerHandler.topics.containsKey(topicName)){
                 throw new TopicNotFoundException(String.format("Topic %S not found.", topicName));
             }
@@ -32,24 +55,19 @@ public class ClientCommands {
             Scanner scanner = new Scanner(System.in);
 
             // Название голосования
-            System.out.print("Введите название голосования: ");
-            String voteName = scanner.nextLine();
+            String voteName = queryForInput("Введите название голосования: ", scanner);
 
             // Описание голосования
-            System.out.print("Введите описание голосования: ");
-            String description = scanner.nextLine();
+            String description = queryForInput("Введите описание голосования: ", scanner);
 
             // Количество вариантов ответа
-            System.out.print("Введите количество вариантов ответа: ");
-            int numberOfOptions = Integer.parseInt(scanner.nextLine());
+            int numberOfOptions = Integer.parseInt(queryForInput("Введите количество вариантов ответа: ", scanner));
 
             // Варианты ответа
-            List<String> options = new ArrayList<>();
-            for (int i = 0; i < numberOfOptions; i++) {
-                System.out.print("Введите вариант ответа " + (i + 1) + ": ");
-                String option = scanner.nextLine();
-                options.add(option);
-            }
+            List<String> options = IntStream.range(0, numberOfOptions)
+                .mapToObj(i -> queryForInput("Введите вариант ответа %d: ", i + 1, scanner))
+                .collect(Collectors.toList());
+
 
             // Создаем новое голосование
             Vote vote = new Vote(voteName, description, options);
@@ -57,8 +75,6 @@ public class ClientCommands {
             ServerHandler.votes.put(voteName, vote); // Если у вас есть структура для хранения голосований
 
             return "Vote created: " + voteName;
-        }
-        return "Invalid create vote command";
     }
 
 
