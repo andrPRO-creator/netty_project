@@ -26,22 +26,23 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String command) {
         System.out.println("Received command: " + command);
-        String[] parts = command.split(" ");
+        String[] parts = command.split("=");
         String response = processCommand(parts);
         ctx.writeAndFlush(response + "\n");
     }
 
     private String processCommand(String[] parts) {
         String command = parts[0];
-        if (currentUser==null){
-            return switch (command) {
-                case "login" -> ClientCommands.login(parts[1]);
-                default -> "Вы не вошли под своим username";
-            };
-        }
+//        if (currentUser==null){
+//            return switch (command) {
+//                case "login -u" -> ClientCommands.login(parts[1]);
+//                default -> "Вы не вошли под своим username";
+//            };
+//        }
         return switch (command) {
-            case "login" -> ClientCommands.login(parts[1]);
-            case "create" -> ClientCommands.create(parts);
+            case "login -u" -> ClientCommands.login(parts[1]);
+            case "create topic -n" -> ClientCommands.createTopic(parts);
+            case "create vote -t" -> ClientCommands.createVote(parts);
             case "view" -> ClientCommands.view(parts);
             case "vote" -> ClientCommands.vote(parts);
             case "delete" -> ClientCommands.delete(parts);

@@ -1,5 +1,6 @@
 package org.example.commands;
 
+import org.example.exceptions.TopicNotFoundException;
 import org.example.handlers.ServerHandler;
 import org.example.models.Topic;
 import org.example.models.Vote;
@@ -12,25 +13,30 @@ public class ClientCommands {
         return "Logged in as " + username;
     }
 
-    public static String create(String[] parts) {
-        if (parts[1].equals("topic") && parts.length>1) {
-            String topicName = String.join(" ", Arrays.copyOfRange(parts, 2, parts.length));
+    public static String createTopic(String[] parts) {
+        if (parts[0].equals("create topic -n") && parts.length>1) {
+            String topicName = String.join("=", Arrays.copyOfRange(parts, 1, parts.length));
             ServerHandler.topics.put(topicName, new Topic(topicName));
             return "Topic created: " + topicName;
-        } else if (parts[1].equals("vote") && parts.length>1) {
-            String topicName = String.join(" ", Arrays.copyOfRange(parts, 2, parts.length));
+        }
+        return "Invalid create topic command";
+    }
+
+    public static String createVote(String[] parts){
+        if (parts[0].equals("create vote -t") && parts.length>1) {
+            String topicName = String.join("=", Arrays.copyOfRange(parts, 1, parts.length));
             if (!ServerHandler.topics.containsKey(topicName)){
-                return "Topic not found: " + topicName;
+                throw new TopicNotFoundException(String.format("Topic %S not found.", topicName));
             }
             // Запрос информации для голосования
             Scanner scanner = new Scanner(System.in);
 
             // Название голосования
-            System.out.print("Введите уникальное имя голосования: ");
+            System.out.print("Введите название голосования: ");
             String voteName = scanner.nextLine();
 
             // Описание голосования
-            System.out.print("Введите тему голосования (описание): ");
+            System.out.print("Введите описание голосования: ");
             String description = scanner.nextLine();
 
             // Количество вариантов ответа
@@ -46,14 +52,15 @@ public class ClientCommands {
             }
 
             // Создаем новое голосование
-            Vote vote = new Vote(voteName, description, options); // Замените "creator" на реальное имя создателя
+            Vote vote = new Vote(voteName, description, options);
 
             ServerHandler.votes.put(voteName, vote); // Если у вас есть структура для хранения голосований
 
             return "Vote created: " + voteName;
         }
-        return "Invalid create command";
+        return "Invalid create vote command";
     }
+
 
     public static String view(String[] parts) {
         if (parts.length == 1) {
