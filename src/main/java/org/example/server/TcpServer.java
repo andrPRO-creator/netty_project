@@ -14,6 +14,7 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.CharsetUtil;
+import org.example.client.NettyClient;
 import org.example.handlers.ServerHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ public class TcpServer {
                                           .addLast(new StringEncoder(CharsetUtil.UTF_8)) // Кодируем String -> ByteBuf
                                           .addLast(new LoggingHandler(LogLevel.INFO)) // Логирование данных
                                           .addLast(new ServerHandler()); // Обработчик данных
+
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)
@@ -56,6 +58,11 @@ public class TcpServer {
         } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();
+
+
         }
+    }
+    public static void main(String[] args) throws Exception {
+        new TcpServer(8080).run();
     }
 }

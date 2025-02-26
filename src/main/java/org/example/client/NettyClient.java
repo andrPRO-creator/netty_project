@@ -49,4 +49,8 @@ public class NettyClient {
             group.shutdownGracefully();
         }
     }
+
+    public static void main(String[] args) throws Exception {
+        new NettyClient("localhost",8080).run();
+    }
 }
