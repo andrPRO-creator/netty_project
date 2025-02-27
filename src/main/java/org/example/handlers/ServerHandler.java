@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
 import org.example.commands.ClientCommands;
 import org.example.models.Topic;
@@ -23,8 +24,20 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     public static final Map<String, Vote> votes = new HashMap<>();
     private String currentUser;
 
+    public static final AttributeKey<String> USER_KEY =
+            AttributeKey.newInstance("user");
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String command) {
+        if (command.startsWith("login -u=")) {
+            String username = command.split("=")[1];
+
+            if (UserManager.login(username, ctx.channel())) {
+                ctx.channel().attr(USER_KEY).set(username);
+                ctx.writeAndFlush("Успешный вход: " + username);
+            } else {
+                ctx.writeAndFlush("Ошибка: Логин " + username + " уже занят");
+            }}
         System.out.println("Received command: " + command);
         String[] parts = command.split("=");
         String response = processCommand(parts);
