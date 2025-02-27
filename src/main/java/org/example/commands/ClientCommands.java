@@ -1,7 +1,6 @@
 package org.example.commands;
 
-import org.example.exceptions.InvalidCreateCommandException;
-import org.example.exceptions.TopicNotFoundException;
+
 import org.example.handlers.ServerHandler;
 import org.example.models.Topic;
 import org.example.models.Vote;
@@ -16,16 +15,16 @@ public class ClientCommands {
     private static final String CREATE_COMMAND = "create";
     private static final String INVALID_CREATE_COMMAND = "Invalid create command";
 
-    public static String login(String username) {
-        ServerHandler.loggedInUsers.put(username, username);
-        return "Logged in as " + username;
+    public static String login() {
+        //ServerHandler.loggedInUsers.put(username, username);
+        return "Вы уже авторизованы на сервере!";
     }
 
     private static String parseStringCommand(String[] parts, String command) {
         if (parts[0].equals(command) && parts.length>1) {
             return String.join("=", Arrays.copyOfRange(parts, 1, parts.length));
         } else {
-            throw new InvalidCreateCommandException(INVALID_CREATE_COMMAND);
+            return null;
         }
     }
 
@@ -41,22 +40,24 @@ public class ClientCommands {
 
     public static String createTopic(String[] parts) {
         String topicName = parseStringCommand(parts, CREATE_COMMAND + " " + TOPIC_COMMAND);
+        if (topicName!=null){
         ServerHandler.topics.put(topicName, new Topic(topicName));
-        return "Topic is created";
+        return "Topic is created";}else {
+            return "Ошибка! Введено нулевое значение параметра";
+        }
     }
 
     public static String createVote(String[] parts){
             String topicName = parseStringCommand(parts, CREATE_COMMAND + " " + VOTE_COMMAND);
 
             if (!ServerHandler.topics.containsKey(topicName)){
-                throw new TopicNotFoundException(String.format("Topic %S not found.", topicName));
+                return (String.format("Topic %S not found.", topicName));
             }
             // Запрос информации для голосования
             Scanner scanner = new Scanner(System.in);
 
             // Название голосования
             String voteName = queryForInput("Введите название голосования: ", scanner);
-
             // Описание голосования
             String description = queryForInput("Введите описание голосования: ", scanner);
 

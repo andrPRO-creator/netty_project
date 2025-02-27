@@ -7,6 +7,9 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
 import org.example.commands.ClientCommands;
+import org.example.commands.ServerCommands;
+import org.example.exceptions.InvalidCreateCommandException;
+import org.example.exceptions.TopicNotFoundException;
 import org.example.models.Topic;
 import org.example.models.Vote;
 import org.slf4j.Logger;
@@ -22,38 +25,38 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     public static final Map<String, Topic> topics = new HashMap<>();
     public static final Map<String, String> loggedInUsers = new HashMap<>();
     public static final Map<String, Vote> votes = new HashMap<>();
-    private String currentUser;
 
     public static final AttributeKey<String> USER_KEY =
             AttributeKey.newInstance("user");
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String command) {
-        if (command.startsWith("login -u=")) {
-            String username = command.split("=")[1];
+        if (ctx.channel().attr(USER_KEY).get()==null){
 
-            if (UserManager.login(username, ctx.channel())) {
-                ctx.channel().attr(USER_KEY).set(username);
-                ctx.writeAndFlush("Успешный вход: " + username);
-            } else {
-                ctx.writeAndFlush("Ошибка: Логин " + username + " уже занят");
-            }}
-        System.out.println("Received command: " + command);
-        String[] parts = command.split("=");
-        String response = processCommand(parts);
-        ctx.writeAndFlush(response + "\n");
+            if (command.startsWith("login -u=") && command.length()>9 ) {
+                String username = command.split("=")[1];
+
+                if (UserManager.login(username, ctx.channel())) {
+                    ctx.channel().attr(USER_KEY).set(username);
+                    ctx.writeAndFlush("Успешный вход: " + username);
+                } else {
+                    ctx.writeAndFlush("Ошибка: Логин " + username + " уже занят");
+                }
+            } else {ctx.writeAndFlush("Пожалуйста, войдите под своим логином \nКоманда \"login -u=вашЮзернейм\"\n");}
+        } else {
+            System.out.println("Received command: " + command);
+            String[] parts = command.split("=");
+            String response = processCommand(parts);
+            ctx.writeAndFlush(response + "\n");
+        }
     }
 
-    private String processCommand(String[] parts) {
+    private String processCommand(String[] parts) throws InvalidCreateCommandException,
+            TopicNotFoundException {
         String command = parts[0];
-//        if (currentUser==null){
-//            return switch (command) {
-//                case "login -u" -> ClientCommands.login(parts[1]);
-//                default -> "Вы не вошли под своим username";
-//            };
-//        }
+
         return switch (command) {
-            case "login -u" -> ClientCommands.login(parts[1]);
+            case "login -u" -> ClientCommands.login();
             case "create topic -n" -> ClientCommands.createTopic(parts);
             case "create vote -t" -> ClientCommands.createVote(parts);
             case "view" -> ClientCommands.view(parts);
