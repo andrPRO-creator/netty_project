@@ -32,6 +32,7 @@ public class Vote {
         return results;
     }
 
+    public void vote(String name, String description, String options){};
 
     public void vote(String option) {
         results.put(option, results.getOrDefault(option, 0) + 1);

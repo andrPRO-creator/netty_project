@@ -28,15 +28,6 @@ public class ClientCommands {
         }
     }
 
-    private static String queryForInput(String message, Scanner scanner) {
-        System.out.println(message);
-        return scanner.nextLine();
-    }
-
-    private static String queryForInput(String message, Object args, Scanner scanner) {
-        System.out.println(String.format(message, args));
-        return scanner.nextLine();
-    }
 
     public static String createTopic(String[] parts) {
         String topicName = parseStringCommand(parts, CREATE_COMMAND + " " + TOPIC_COMMAND);
@@ -47,35 +38,37 @@ public class ClientCommands {
         }
     }
 
-    public static String createVote(String[] parts){
-            String topicName = parseStringCommand(parts, CREATE_COMMAND + " " + VOTE_COMMAND);
+    public static String findTopic(String[] parts){
+        String topicName = parseStringCommand(parts, CREATE_COMMAND + " " + VOTE_COMMAND);
 
-            if (!ServerHandler.topics.containsKey(topicName)){
-                return (String.format("Topic %S not found.", topicName));
-            }
-            // Запрос информации для голосования
-            Scanner scanner = new Scanner(System.in);
+        if (!ServerHandler.topics.containsKey(topicName)){
+            System.out.println((String.format("Topic %S not found.", topicName)));
+            return null;
+        }
+        return topicName;
+    }
 
-            // Название голосования
-            String voteName = queryForInput("Введите название голосования: ", scanner);
-            // Описание голосования
-            String description = queryForInput("Введите описание голосования: ", scanner);
+    // Обновленный метод createVote
+    public static String createVote(String topicName, String voteName, String description, List<String> options) {
+        if (topicName == null || voteName == null || description == null || options == null || options.isEmpty()) {
+            return "Ошибка: Не все параметры голосования указаны.";
+        }
 
-            // Количество вариантов ответа
-            int numberOfOptions = Integer.parseInt(queryForInput("Введите количество вариантов ответа: ", scanner));
+        // Проверяем, существует ли тема
+        if (!ServerHandler.topics.containsKey(topicName)) {
+            return "Ошибка: Тема не найдена.";
+        }
 
-            // Варианты ответа
-            List<String> options = IntStream.range(0, numberOfOptions)
-                .mapToObj(i -> queryForInput("Введите вариант ответа %d: ", i + 1, scanner))
-                .collect(Collectors.toList());
+        // Создаем новое голосование
+        Vote vote = new Vote(voteName, description, options);
 
+        // Добавляем голосование в тему
+        ServerHandler.topics.get(topicName).addVote(vote);
 
-            // Создаем новое голосование
-            Vote vote = new Vote(voteName, description, options);
+        // Сохраняем голосование в общем списке
+        ServerHandler.votes.put(voteName, vote);
 
-            ServerHandler.votes.put(voteName, vote); // Если у вас есть структура для хранения голосований
-
-            return "Vote created: " + voteName;
+        return "Голосование успешно создано: " + voteName;
     }
 
 
